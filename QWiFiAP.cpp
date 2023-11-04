@@ -1,31 +1,6 @@
 #include "QWiFiAP.h";
 
-void QWiFiAP::QWiFiAP(uint16_t port, servo_params *data)
-{
-    _port = port;
-    _data = data;
-}
-
-void QWiFiAP::QWiFiAP(servo_params *data)
-{
-    QWiFiAP(_port, data);
-}
-
-void QWiFiAP::_reset_credentials()
-{
-    if (!LittleFS.begin())
-    {
-        req->send(500, "text/plain", "FS Init : Please restart the device");
-        return;
-    }
-    if (!LittleFS.remove(CREDS_PATH))
-    {
-        req->send(500, "text/plain", "Failed to delete the saved credentials");
-        return;
-    }
-    req->send(200, "text/plain", "ok");
-    ESP.restart();
-}
+//*******************[Private Member Functions]**********************//
 
 int16_t QWiFiAP::_strToI16(String dec)
 {
@@ -37,7 +12,6 @@ int16_t QWiFiAP::_strToI16(String dec)
     }
     return value;
 }
-
 
 bool QWiFiAP::_parse_creds(uint8_t *data, String *ap_ssid, String *ap_pass)
 {
@@ -92,26 +66,6 @@ bool QWiFiAP::_validate_creds(String ap_ssid, String ap_pass, String *msg)
     return true;
 }
 
-bool QWiFiAP::_save_FS(void)
-{
-    if (!LittleFS.begin())
-    {
-        Serial.println("[_save_FS] : LittleFS check unsuccessful");
-        Serial.println("[_save_FS] : Try restarting the device");
-        return false;
-    }
-    File creds_file = LittleFS.open(CREDS_PATH, "w");
-    if (!creds_file)
-    {
-        Serial.printf("[_save_FS] : Failed to create file at %s\n", CREDS_PATH);
-        return false;
-    }
-    creds_file.printf("%s\n%s\n", wc.ap_ssid.c_str(), wc.ap_pass.c_str());
-    creds_file.close();
-    return true;
-}
-
-
 bool QWiFiAP::_ap_server_definition(void)
 {
     _ap_server = new AsyncWebServer(_port);
@@ -148,7 +102,7 @@ bool QWiFiAP::_ap_server_definition(void)
         req->send(200, "text/plain", "");
     });
     _ap_server->on("/reset", HTTP_GET, [this](AsyncWebServerRequest *req) {
-        _reset_credentials();
+        reset_credentials();
     });
     //POST body handler for AP credential update
     _ap_server->onRequestBody([this](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total)
@@ -184,6 +138,25 @@ bool QWiFiAP::_ap_server_definition(void)
         req->send(200, "text/plain", "Please restart the device to apply changes"); 
     });
     return true; // AP server definition successful
+}
+
+bool QWiFiAP::_save_FS(void)
+{
+    if (!LittleFS.begin())
+    {
+        Serial.println("[_save_FS] : LittleFS check unsuccessful");
+        Serial.println("[_save_FS] : Try restarting the device");
+        return false;
+    }
+    File creds_file = LittleFS.open(CREDS_PATH, "w");
+    if (!creds_file)
+    {
+        Serial.printf("[_save_FS] : Failed to create file at %s\n", CREDS_PATH);
+        return false;
+    }
+    creds_file.printf("%s\n%s\n", wc.ap_ssid.c_str(), wc.ap_pass.c_str());
+    creds_file.close();
+    return true;
 }
 
 bool QWiFiAP::_load_FS(void)
@@ -226,7 +199,36 @@ void QWiFiAP::_set_error(int8_t sev){
      fdat.sev = sev;
 }
 
+//*******************[Public Member Functions]**********************//
+
 //used for errors that can be fixed by restart
+void QWiFiAP::QWiFiAP(uint16_t port, servo_params *data)
+{
+    _port = port;
+    _data = data;
+}
+
+void QWiFiAP::QWiFiAP(servo_params *data)
+{
+    QWiFiAP(_port, data);
+}
+
+void QWiFiAP::reset_credentials()
+{
+    if (!LittleFS.begin())
+    {
+        req->send(500, "text/plain", "FS Init : Please restart the device");
+        return;
+    }
+    if (!LittleFS.remove(CREDS_PATH))
+    {
+        req->send(500, "text/plain", "Failed to delete the saved credentials");
+        return;
+    }
+    req->send(200, "text/plain", "ok");
+    ESP.restart();
+}
+
 void QWiFiAP::fault_indicator(void){
     if(fdat.sev == 0){
         return;

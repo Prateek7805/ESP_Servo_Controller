@@ -38,7 +38,7 @@ private:
 
     void _ap_server_definition(void);
     bool _load_FS(void);
-    void _reset_credentials(void);
+    
     int16_t _strToI16(String dec);
     bool _parse_creds(uint8_t *data, String *ap_ssid, String *ap_pass);
     bool _validate_creds(String ap_ssid, String ap_pass, String *msg);
@@ -50,6 +50,7 @@ public:
     QWiFiAP(uint16_t port, servo_params *data);
     void begin(servo_params *data);
     void fault_indicator();
+    void reset_credentials(void);
 };
 
 #endif _QWiFiAP_
