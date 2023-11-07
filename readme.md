@@ -8,5 +8,5 @@
 * Wireless (WiFi)
 * Customizable Access Point credentials
 
-### To Do: ###
+### To Do:
 * Need to add OTA updates via UI
