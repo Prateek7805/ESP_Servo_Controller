@@ -7,3 +7,6 @@
 * Realtime
 * Wireless (WiFi)
 * Customizable Access Point credentials
+
+### To Do: ###
+* Need to add OTA updates via UI

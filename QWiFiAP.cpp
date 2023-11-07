@@ -1,29 +1,18 @@
-#include "QWiFiAP.h";
+#include "QWiFiAP.h"
 
 //*******************[Private Member Functions]**********************//
-
-int16_t QWiFiAP::_strToI16(String dec)
-{
-    char *endptr;
-    uint8_t value = (uint8_t)strtol(dec.c_str(), &endptr, 10); // string, end of conversion pointer, base of int conversion
-    if (*endptr != '\0')
-    {
-        return -1;
-    }
-    return value;
-}
 
 bool QWiFiAP::_parse_creds(uint8_t *data, String *ap_ssid, String *ap_pass)
 {
     String body = (char *)data;
 
     // AP SSID
-    int si = body.indexOf("\"dn\":\"");
+    int si = body.indexOf("\"ssid\":\"");
     if (si == -1)
     {
         return false;
     }
-    si += 6;
+    si += 8;
     int ei = body.indexOf("\",", si);
     if (ei == -1)
     {
@@ -33,12 +22,12 @@ bool QWiFiAP::_parse_creds(uint8_t *data, String *ap_ssid, String *ap_pass)
 
 
     // AP Password
-    si = body.indexOf("\"dp\":\"");
+    si = body.indexOf("\"pass\":\"");
     if (si == -1)
     {
         return false;
     }
-    si += 6;
+    si += 8;
     ei = body.indexOf("\"", si);
     if (ei == -1)
     {
@@ -66,9 +55,7 @@ bool QWiFiAP::_validate_creds(String ap_ssid, String ap_pass, String *msg)
     return true;
 }
 
-bool QWiFiAP::_ap_server_definition(void)
-{
-    _ap_server = new AsyncWebServer(_port);
+bool QWiFiAP::_ap_server_definition(void){
     if (!_ap_server)
     {
         return false; // AP server initialization failed;
@@ -79,30 +66,29 @@ bool QWiFiAP::_ap_server_definition(void)
                    { req->send_P(200, "text/css", _styles); });
     _ap_server->on("/script.js", HTTP_GET, [](AsyncWebServerRequest *req)
                    { req->send_P(200, "application/javascript", _script); });
-    _ap_server->on("/servo", HTTP_GET, [this](AsyncWebServerRequest * req){
-        if(!req->hasParam("angle")){
-            req->send(400, "text/plain", "Invalid Paramter");
-            return;
-        }
-        String angle_st = req->param("angle").value();
-        int16_t angle = _strToI16(angle_st);
-        if(angle == -1){
-            Serial.println("[/servo] : angle parameter value error");
-            req->send(400, "text/plain", "Invalid Paramter value");
-            return;
-        }
-
-        if(angle<0 || angle > 360{
-            Serial.println("[/servo] : angle parameter value error");
-            req->send(400, "text/plain", "Parameter - angle has value not in range: 0 - 360 deg");
-            return;
-        });
-
-        _data->angle = angle;
-        req->send(200, "text/plain", "");
-    });
+    
     _ap_server->on("/reset", HTTP_GET, [this](AsyncWebServerRequest *req) {
-        reset_credentials();
+        if(!reset_credentials()){
+            req->send(500, "text/plain", "[/reset] : Error in deleting credentials please restart the device");
+            return;
+        }
+        req->send(200, "text/plain", "Credentials are resetted, please restart the device");
+    });
+    _ap_server->on("/rmrf", HTTP_GET, [this](AsyncWebServerRequest *req) {
+        if (!LittleFS.begin())
+        {
+            Serial.println("[reset_credentials] : Failed to initialize LittleFS");
+            req->send(500, "text/plain", "[reset_credentials] : Failed to initialize LittleFS");
+            return;
+        }
+        if (!LittleFS.format())
+        {
+            Serial.println("[reset_credentials] : Failed to delete the saved credentials");
+            req->send(500, "text/plain", "[reset_credentials] : Failed to delete the saved credentials");
+            return;
+        }
+        req->send(200, "text/plain", "LittleFS Formatted!, please restart the device");
+        ESP.restart();
     });
     //POST body handler for AP credential update
     _ap_server->onRequestBody([this](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total)
@@ -202,31 +188,34 @@ void QWiFiAP::_set_error(int8_t sev){
 //*******************[Public Member Functions]**********************//
 
 //used for errors that can be fixed by restart
-void QWiFiAP::QWiFiAP(uint16_t port, servo_params *data)
+
+QWiFiAP::QWiFiAP(uint16_t port)
 {
     _port = port;
-    _data = data;
+    _ap_server = new AsyncWebServer(_port);
 }
 
-void QWiFiAP::QWiFiAP(servo_params *data)
-{
-    QWiFiAP(_port, data);
+QWiFiAP::QWiFiAP(){
+    QWiFiAP(80);
 }
 
-void QWiFiAP::reset_credentials()
+bool QWiFiAP::reset_credentials()
 {
     if (!LittleFS.begin())
     {
-        req->send(500, "text/plain", "FS Init : Please restart the device");
-        return;
+        Serial.println("[reset_credentials] : Failed to initialize LittleFS");
+        return false;
     }
     if (!LittleFS.remove(CREDS_PATH))
     {
-        req->send(500, "text/plain", "Failed to delete the saved credentials");
-        return;
+        Serial.println("[reset_credentials] : Failed to delete the saved credentials");
+        return false;
     }
-    req->send(200, "text/plain", "ok");
-    ESP.restart();
+    return true;
+}
+
+void QWiFiAP::on(const char *uri, WebRequestMethodComposite method, ArRequestHandlerFunction handler){
+    _ap_server->on(uri, method, handler);
 }
 
 void QWiFiAP::fault_indicator(void){
@@ -256,5 +245,11 @@ void QWiFiAP::begin(void)
         _set_error(1);
         return;
     }
+    WiFi.disconnect();
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP(wc.ap_ssid.c_str(), wc.ap_pass.c_str());
+    IPAddress AP_IP = WiFi.softAPIP();
+    Serial.print("[begin] : ");
+    Serial.println(AP_IP);
     _ap_server->begin();
 }
