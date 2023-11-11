@@ -48,7 +48,7 @@ void setup() {
             req->send(400, "text/plain", "Invalid Paramter value");
             return;
         }
-        if(angle<0 || angle > 180){
+        if(angle < 0 || angle > 180){
             Serial.println("[/angle] : angle parameter value error");
             req->send(400, "text/plain", "Parameter - angle has value not in range: 0 - 360 deg");
             return;

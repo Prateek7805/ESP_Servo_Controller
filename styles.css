@@ -100,7 +100,7 @@ body{
     color: var(--text);
 }
 .err_m{
-    position: absolute;
+    position: fixed;
     background-color: var(--err-m);
     display: flex;
     justify-content: center;
@@ -245,6 +245,88 @@ body{
 /* Hide scrollbar track (the background) */
 ::-webkit-scrollbar-track {
     display: none;
+}
+.filebox-wrapper{
+    display: flex;
+    flex-direction: column;
+}
+.filebox-combo{
+    display: flex;
+}
+.filebox-combo>input[type=file]{
+    display: none;
+}
+
+
+.filebox-combo>label{
+    min-width: 100px;
+    padding: 10px 15px;
+    border: none;
+    font-size: 18px;
+    border-radius: 0 0 0 10px;
+    background-color: var(--btn-bg);
+}
+.filebox-combo>label:hover{
+    cursor: pointer;
+}
+.filebox-combo>button{
+    padding: 10px 15px;
+    border: none;
+    font-size: 18px;
+    background-color: var(--btn-bg);
+    border-radius: 0 0 10px 0;
+    color: #000;
+}
+.filebox-combo>button:hover{
+    cursor: pointer;
+    background-color: var(--btn-hover);
+}
+.filebox-combo>button:disabled{
+    cursor: not-allowed;
+    background-color: var(--btn-bg);
+
+}
+.filebox-combo>button:disabled>svg{
+    stroke: #000;
+}
+.filebox-combo>button:not(:disabled):hover>svg{
+    stroke: #fff;
+}
+.filebox-combo>button>svg{
+    width: 24px;
+    height: 24px;
+    stroke: #000;
+}
+.progress-bar{
+    height:3px;
+    border:none;
+    background-color: var(--accent-inv);
+    width: 0%;
+}
+.close-btn{
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    padding: 5px;
+}
+.close-btn:hover{
+    cursor: pointer;
+    background-color: var(--accent);
+}
+.close-btn:active{
+    transform: translateY(-50%) scale(0.96);
+}
+.close-btn>svg{
+    width: 24px;
+    height: 24px;
+    stroke: var(--text);
 }
 
 @media (max-width: 1200px){

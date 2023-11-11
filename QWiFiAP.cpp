@@ -20,7 +20,6 @@ bool QWiFiAP::_parse_creds(uint8_t *data, String *ap_ssid, String *ap_pass)
     }
     *ap_ssid = body.substring(si, ei);
 
-
     // AP Password
     si = body.indexOf("\"pass\":\"");
     if (si == -1)
@@ -55,7 +54,8 @@ bool QWiFiAP::_validate_creds(String ap_ssid, String ap_pass, String *msg)
     return true;
 }
 
-bool QWiFiAP::_ap_server_definition(void){
+bool QWiFiAP::_ap_server_definition(void)
+{
     if (!_ap_server)
     {
         return false; // AP server initialization failed;
@@ -66,15 +66,16 @@ bool QWiFiAP::_ap_server_definition(void){
                    { req->send_P(200, "text/css", _styles); });
     _ap_server->on("/script.js", HTTP_GET, [](AsyncWebServerRequest *req)
                    { req->send_P(200, "application/javascript", _script); });
-    
-    _ap_server->on("/reset", HTTP_GET, [this](AsyncWebServerRequest *req) {
+
+    _ap_server->on("/reset", HTTP_GET, [this](AsyncWebServerRequest *req)
+                   {
         if(!reset_credentials()){
             req->send(500, "text/plain", "[/reset] : Error in deleting credentials please restart the device");
             return;
         }
-        req->send(200, "text/plain", "Credentials are resetted, please restart the device");
-    });
-    _ap_server->on("/rmrf", HTTP_GET, [this](AsyncWebServerRequest *req) {
+        req->send(200, "text/plain", "Credentials are resetted, please restart the device"); });
+    _ap_server->on("/rmrf", HTTP_GET, [this](AsyncWebServerRequest *req)
+                   {
         if (!LittleFS.begin())
         {
             Serial.println("[reset_credentials] : Failed to initialize LittleFS");
@@ -88,9 +89,54 @@ bool QWiFiAP::_ap_server_definition(void){
             return;
         }
         req->send(200, "text/plain", "LittleFS Formatted!, please restart the device");
-        ESP.restart();
-    });
-    //POST body handler for AP credential update
+        ESP.restart(); });
+
+    _ap_server->on(
+        "/update", HTTP_POST, [](AsyncWebServerRequest *request)
+        {
+        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", (Update.hasError()) ? "Update Failed" : "Update Success");
+        response->addHeader("Connection", "close");
+        response->addHeader("Access-Control-Allow-Origin", "*");
+        request->send(response); },
+        [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+        {
+            size_t content_len = request->contentLength();
+            if (!index)
+            {
+                Update.runAsync(true);
+                if (!Update.begin(content_len))
+                {
+                    Update.printError(Serial);
+                }
+            }
+            if (Update.write(data, len) != len)
+            {
+                Update.printError(Serial);
+            }
+            else
+            {
+                Serial.printf("Progress: %d%%\n", (Update.progress() * 100) / Update.size());
+            }
+            if (final)
+            {
+                AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "Please wait while the device reboots");
+                response->addHeader("Refresh", "20");
+                response->addHeader("Location", "/");
+                request->send(response);
+                if (!Update.end(true))
+                {
+                    Update.printError(Serial);
+                }
+                else
+                {
+                    Serial.println("Update complete");
+                    Serial.flush();
+                    ESP.restart();
+                }
+            }
+        });
+
+    // POST body handler for AP credential update
     _ap_server->onRequestBody([this](AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index, size_t total)
                               {  
         if (len > 250){
@@ -121,8 +167,7 @@ bool QWiFiAP::_ap_server_definition(void){
             req->send(500, "text/plain", "Failed to save credentials (～￣▽￣)～");
             return;
         }
-        req->send(200, "text/plain", "Please restart the device to apply changes"); 
-    });
+        req->send(200, "text/plain", "Please restart the device to apply changes"); });
     return true; // AP server definition successful
 }
 
@@ -172,22 +217,24 @@ bool QWiFiAP::_load_FS(void)
     return true;
 }
 
-void QWiFiAP::_fault_indicator_init(){
+void QWiFiAP::_fault_indicator_init()
+{
     pinMode(fdat.led_pin, OUTPUT);
 }
 
-void QWiFiAP::_set_error(int8_t sev){
-    if(sev < 0 || sev > 5) 
+void QWiFiAP::_set_error(int8_t sev)
+{
+    if (sev < 0 || sev > 5)
     {
         Serial.println("[_set_error] : invalid error severity");
         return;
     }
-     fdat.sev = sev;
+    fdat.sev = sev;
 }
 
 //*******************[Public Member Functions]**********************//
 
-//used for errors that can be fixed by restart
+// used for errors that can be fixed by restart
 
 QWiFiAP::QWiFiAP(uint16_t port)
 {
@@ -195,7 +242,8 @@ QWiFiAP::QWiFiAP(uint16_t port)
     _ap_server = new AsyncWebServer(_port);
 }
 
-QWiFiAP::QWiFiAP(){
+QWiFiAP::QWiFiAP()
+{
     QWiFiAP(80);
 }
 
@@ -214,20 +262,25 @@ bool QWiFiAP::reset_credentials()
     return true;
 }
 
-void QWiFiAP::on(const char *uri, WebRequestMethodComposite method, ArRequestHandlerFunction handler){
+void QWiFiAP::on(const char *uri, WebRequestMethodComposite method, ArRequestHandlerFunction handler)
+{
     _ap_server->on(uri, method, handler);
 }
 
-void QWiFiAP::fault_indicator(void){
-    if(fdat.sev == 0){
+void QWiFiAP::fault_indicator(void)
+{
+    if (fdat.sev == 0)
+    {
         return;
     }
-    if(fdat.sev <1 || fdat.sev >5){
+    if (fdat.sev < 1 || fdat.sev > 5)
+    {
         Serial.println("[fault_indicator] : Invalid severity");
         return;
     }
-    uint8_t index = fdat.sev-1;
-    if(millis() - fdat._t > fdat.blink_intr[index]){
+    uint8_t index = fdat.sev - 1;
+    if (millis() - fdat._t > fdat.blink_intr[index])
+    {
         digitalWrite(fdat.led_pin, !digitalRead(fdat.led_pin));
         fdat._t = millis();
     }
@@ -236,7 +289,8 @@ void QWiFiAP::fault_indicator(void){
 void QWiFiAP::begin(void)
 {
     _fault_indicator_init();
-    if(!_load_FS()){
+    if (!_load_FS())
+    {
         _set_error(5);
     }
     if (!_ap_server_definition())

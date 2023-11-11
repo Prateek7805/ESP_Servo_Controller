@@ -2,11 +2,13 @@
 
 ### An ESP8266 based Servo Motor controller with a real-time web interface  
 
-### features  
+### Features  
 * Clean Web based UI
-* Realtime
+* Realtime servo angle control
+* Angle suggestion (n,m) where n < A <= m and (n, m) are nearest multiples of 15
 * Wireless (WiFi)
 * Customizable Access Point credentials
-
-### To Do:
-* Need to add OTA updates via UI
+* DarkMode
+* Physical button to reset AP credentials on long press
+* Factory reset functionality
+* OTA updates using compiled binary

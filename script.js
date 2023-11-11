@@ -9,14 +9,14 @@ var ermid = null;
 const HOST = window.location.origin;
 const TIMEOUT_DELAY = 5e3;
 //validate credentials
-const vdt = (sid, psd)=>{
-    if(sid.length === 0 || psd.length === 0) return false;
-    if(!sid.match(/^[^!#;+\]\/"\t][^+\]"\t]{0,31}$/)) return false;
-    if(!psd.match(/^[\u0020-\u007e]{8,63}$/)) return false;
+const vdt = (sid, psd) => {
+    if (sid.length === 0 || psd.length === 0) return false;
+    if (!sid.match(/^[^!#;+\]\/"\t][^+\]"\t]{0,31}$/)) return false;
+    if (!psd.match(/^[\u0020-\u007e]{8,63}$/)) return false;
     return true;
 }
 //display error for 3s
-const rerr = ()=>{
+const rerr = () => {
     const id = 'ID_ERR_MSG';
     const bid = 'ID_ERR_BG';
     const p_ = d(id);
@@ -26,14 +26,14 @@ const rerr = ()=>{
     b_.classList.add("d-none");
     ermid = null;
 }
-const derr = (m) =>{
+const derr = (m) => {
     const id = 'ID_ERR_MSG';
     const bid = 'ID_ERR_BG';
     const p_ = d(id);
     const b_ = d(bid);
     //add error
     p_.innerText = m;
-    if(ermid === null){
+    if (ermid === null) {
         b_.classList.remove('d-none');
         b_.classList.add('err_m');
         ermid = setTimeout(rerr, TIMEOUT_DELAY);
@@ -45,23 +45,25 @@ const derr = (m) =>{
 
 //send credentials via POST
 
-const __pf = (s_,p_) => fetch(`${HOST}/creds`, {
+const __pf = (s_, p_) => fetch(`${HOST}/creds`, {
     method: 'POST',
     headers: {
-        'content-type' : 'application/json'
+        'content-type': 'application/json'
     },
-    body : JSON.stringify(
-        {ssid:s_,
-        pass:p_}
+    body: JSON.stringify(
+        {
+            ssid: s_,
+            pass: p_
+        }
     )
-}).then(res=>{
-    if(!res.ok){
+}).then(res => {
+    if (!res.ok) {
         console.log(`HTTP error! Status : ${res.status}`);
         derr(`HTTP error! Status : ${res.status}`);
     }
     return res.text();
-}).then(data=>console.log(data)
-).catch(e=>{
+}).then(data => console.log(data)
+).catch(e => {
     console.log(e);
     derr(e);
 })
@@ -74,25 +76,25 @@ const s_creds = () => {
     const p_t = d(pass_)
     const ssid = s_t.value;
     const pass = p_t.value;
-    s_t.value= "";
-    p_t.value= "";
-    if(!vdt(ssid, pass)){
+    s_t.value = "";
+    p_t.value = "";
+    if (!vdt(ssid, pass)) {
         derr(`The AP credentials are invalid`);
         return;
     }
     console.log(ssid, pass);
     __pf(ssid, pass);
 }
-const s_cmd = (cmd, p_, v_) => fetch(v_ === undefined?`${HOST}/${cmd}` : `${HOST}/${cmd}?${p_}=${v_}`)
-    .then((res)=>{
-        if(!res.ok){
+const s_cmd = (cmd, p_, v_) => fetch(v_ === undefined ? `${HOST}/${cmd}` : `${HOST}/${cmd}?${p_}=${v_}`)
+    .then((res) => {
+        if (!res.ok) {
             console.log(`HTTP error! Status : ${res.status}`);
             derr(`HTTP error! Status : ${res.status}`);
         }
         return res.text();
     })
-    .then(data=>console.log(data))
-    .catch(e=>{
+    .then(data => console.log(data))
+    .catch(e => {
         console.log(e);
         derr(e);
     });
@@ -103,34 +105,34 @@ const h_angle_btn = (angle) => {
     s_cmd('angle', 'value', angle);
 }
 
-const initialize = () =>{
+const initialize = () => {
     const theme = localStorage.getItem('theme');
-    const c_dark = theme === 'dark'?  'd-none' : 'theme-svg';
-    const c_light = theme === 'dark'?  'theme-svg' : 'd-none';
+    const c_dark = theme === 'dark' ? 'd-none' : 'theme-svg';
+    const c_light = theme === 'dark' ? 'theme-svg' : 'd-none';
     d('ID_DARK_IMG').setAttribute('class', c_dark);
     d('ID_LIGHT_IMG').setAttribute('class', c_light);
-    const colorTheme = theme === 'dark'? 'dark' : 'light';
+    const colorTheme = theme === 'dark' ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', colorTheme);
 }
 
-const toggleTheme = (e)=>{
+const toggleTheme = (e) => {
     let _id = e.target.id.substring(3);
-    console.log({_id});
+    console.log({ _id });
     _id = _id.substring(0, _id.indexOf('_')).toLowerCase();
     const colorTheme = localStorage.getItem('theme') === 'dark';
-    const theme = colorTheme? 'light' : 'dark';
+    const theme = colorTheme ? 'light' : 'dark';
     localStorage.setItem('theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
-    const c_dark = theme === 'dark'?  'd-none' : 'theme-svg';
-    const c_light = theme === 'dark'?  'theme-svg' : 'd-none';
+    const c_dark = theme === 'dark' ? 'd-none' : 'theme-svg';
+    const c_light = theme === 'dark' ? 'theme-svg' : 'd-none';
     d('ID_DARK_IMG').setAttribute('class', c_dark);
-    d('ID_LIGHT_IMG').setAttribute('class', c_light);   
+    d('ID_LIGHT_IMG').setAttribute('class', c_light);
 }
 
-const updateAngle = (e) =>{
+const updateAngle = (e) => {
     d('ID_ANGLE_VALUE').innerText = `${e.target.value}°`;
     const index = parseInt(parseInt(e.target.value) / 15);
-    const angle_l = index*15;
+    const angle_l = index * 15;
     const angle_r = (index + 1) * 15;
     const angle_wrap = d('ID_ANGLE_BTNS');
     angle_wrap.innerHTML = '';
@@ -147,15 +149,65 @@ const updateAngle = (e) =>{
     angle_wrap.appendChild(btn_l);
     angle_wrap.appendChild(btn_r);
 }
+
+const hfileChange = (e) => {
+    const file = e.target.files[0];
+    const btn = d('ID_F_BTN');
+    const fil = d('ID_F_UPDATE_LABEL');
+    const ext = file.name.substring(file.name.lastIndexOf('.'));
+    if (ext !== '.bin') {
+        derr("Invalid file format");
+        btn.disabled = true;
+        file.value = '';
+        return;
+    }
+    const fn = file.name.length > 15 ? `${file.name.substring(0, 15)}...` : file.name;
+    fil.innerText = fn;
+    btn.disabled = false;
+}
+
+const hFileUpload = () => {
+    const fileInp = d('ID_UPDATE_FILE');
+    const file = fileInp.files[0];
+    const formData = new FormData();
+    const progressBar = d('ID_F_PROGRESS');
+    formData.append('file', file);
+
+    xhr = new XMLHttpRequest();
+    xhr.open('POST', `${HOST}/update`, true);
+
+    xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+            const progress = (e.loaded / e.total) * 100;
+            progressBar.style.width = `${progress}%`;
+            if(progress === 100){
+                derr("File Uploaded");
+                xhr = null;
+            }
+        }
+    };
+
+    
+
+    xhr.send(formData);
+}
 //ready
 ae(document, 'DOMContentLoaded', () => {
     initialize();
     ae(d('ID_AP_SUBMIT'), 'click', s_creds);
-    ae(d('ID_AP_RESET'), 'click', ()=>s_cmd('reset'));
-    ae(d('ID_ALL_RESET'), 'click', ()=>s_cmd('rmrf'));
+    ae(d('ID_AP_RESET'), 'click', () => s_cmd('reset'));
+    ae(d('ID_ALL_RESET'), 'click', () => s_cmd('rmrf'));
     ae(d('ID_ANGLE'), 'input', updateAngle);
-    ae(d('ID_THEME_BTN'), 'click', (e)=>toggleTheme(e));
-    ae(d('ID_ANGLE'), 'change', (e)=>s_cmd('angle', 'value', e.target.value));
+    ae(d('ID_THEME_BTN'), 'click', (e) => toggleTheme(e));
+    ae(d('ID_ANGLE'), 'change', (e) => s_cmd('angle', 'value', e.target.value));
+    ae(d('ID_ERR_MSG_CLOSE'), 'click', (e) => {
+        if (ermid) {
+            clearTimeout(ermid);
+            rerr();
+        }
+    });
+    ae(d('ID_UPDATE_FILE'), 'change', hfileChange);
+    ae(d('ID_F_BTN'), 'click', hFileUpload);
 });
 
 
